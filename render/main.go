@@ -1,29 +1,30 @@
 package main
 
 import (
-  "encoding/json"
   "net/http"
+
+  "gopkg.in/unrolled/render.v1"
 )
 
-type Book struct {
-  Title string `json:"title"`
-  Author string `json:"author"`
-}
-
 func main() {
-  http.HandleFunc("/", ShowBooks)
-  http.ListenAndServe(":8080", nil)
-}
+  r := render.New(render.Options{})
+  mux := http.NewServeMux()
 
-func ShowBooks(rw http.ResponseWriter, r *http.Request) {
-  book := Book {"Building web Apps with Go", "Jeremy Saenz"}
+  mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+    w.Write([]byte("Welcome, Visit sub pages now."))
+  })
 
-  js, err := json.Marshal(book)
-  if err != nil {
-    http.Error(rw, err.Error(), http.StatusInternalServerError)
-    return
-  }
+  mux.HandleFunc("/data", func(w http.ResponseWriter, req *http.Request) {
+    r.Data(w, http.StatusOK, []byte("Some binary data here"))
+  })
 
-  rw.Header().Set("Content-Type", "application/json")
-  rw.Write(js)
+  mux.HandleFunc("/json", func(w http.ResponseWriter, req *http.Request) {
+    r.JSON(w, http.StatusOK, map[string]string{"hello":"json"})
+  })
+
+  mux.HandleFunc("/html", func(w http.ResponseWriter, req *http.Request) {
+    r.HTML(w, http.StatusOK, "example", nil)
+  })
+
+  http.ListenAndServe(":8080", mux)
 }
